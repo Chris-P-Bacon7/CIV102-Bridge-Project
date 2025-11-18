@@ -31,17 +31,36 @@ bot_flange_thickness = 1.27
 
 # -------Cross-sectional Properties----
 y_bar = (
-    top_flange
-    * top_flange_thickness
+    (top_flange * top_flange_thickness)
     * (bot_flange_thickness + web + 0.5 * top_flange_thickness)
     + 2 * (web * web_thickness * (bot_flange_thickness + 0.5 * web))
     + 2 * (glue * glue_thickness * (bot_flange_thickness + web - 0.5 * glue_thickness))
-    + bot_flange * bot_flange_thickness * 0.5 * bot_flange_thickness
+    + (bot_flange * bot_flange_thickness * 0.5 * bot_flange_thickness)
 ) / (
-    top_flange * top_flange_thickness
+    (top_flange * top_flange_thickness)
     + 2 * (web * web_thickness)
     + 2 * (glue * glue_thickness)
-    + bot_flange * bot_flange_thickness
+    + (bot_flange * bot_flange_thickness)
+)
+
+I = (
+    (top_flange * top_flange_thickness**3) / 12
+    + 2 * (web**3 * web_thickness) / 12
+    + (bot_flange * bot_flange_thickness**3) / 12
+    + 2 * (glue * glue_thickness**3) / 12
+    + (
+        top_flange
+        * top_flange_thickness
+        * ((bot_flange_thickness + web + 0.5 * top_flange_thickness) - y_bar) ** 2
+    )
+    + 2 * (web * web_thickness * ((bot_flange_thickness + 0.5 * web) - y_bar) ** 2)
+    + 2
+    * (
+        glue
+        * glue_thickness
+        * ((bot_flange_thickness + web - 0.5 * glue_thickness) - y_bar) ** 2
+    )
+    + (bot_flange * bot_flange_thickness * ((0.5 * bot_flange_thickness) - y_bar) ** 2)
 )
 
 # -------Calculate Applied Stresses----
@@ -56,3 +75,4 @@ y_bar = (
 # -------Vfail and Mfail---------------
 
 # -------Output Plots------------------
+print(y_bar, I)
