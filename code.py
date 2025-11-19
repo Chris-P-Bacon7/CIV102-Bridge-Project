@@ -33,6 +33,7 @@ p_wheel_train = [train_weight / 6] * 6
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def calc_reaction_forces(x_pos, adjustment, p_wheel_train):
     Ay = 0
     By = 0
@@ -59,6 +60,7 @@ def calc_reaction_forces(x_pos, adjustment, p_wheel_train):
     By = total_load - Ay
 
     return Ay, By, x_pos_train
+
 
 def graph_sfd(x_pos, adjustment, p_wheel_train):
 
@@ -91,13 +93,15 @@ def graph_sfd(x_pos, adjustment, p_wheel_train):
     # plt.show()
     # return x_points, y_points
 
+
 def greatest_shear(x_pos_train, p_wheel_train):
     res = [0, 0]
     for i in range(-908, 1149):
         if graph_sfd(x_pos_train, i, p_wheel_train)[1] > res[1]:
             res[0], res[1] = graph_sfd(x_pos_train, i, p_wheel_train)
-    
+
     return res
+
 
 print(calc_reaction_forces(x_pos_train, -52, p_wheel_train))
 print(greatest_shear(x_pos_train, p_wheel_train))
