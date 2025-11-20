@@ -62,7 +62,7 @@ def calc_reaction_forces(x_pos, adjustment, p_wheel_train):
     return Ay, By, x_pos_train
 
 
-def graph_sfd(x_pos, adjustment, p_wheel_train):
+def graph_sfd(x_pos, adjustment, p_wheel_train, graph):
 
     # Calculate Reaction Forces + x_pos_train
     Ay, By, x_pos_train = calc_reaction_forces(x_pos, adjustment, p_wheel_train)
@@ -88,24 +88,90 @@ def graph_sfd(x_pos, adjustment, p_wheel_train):
     xpoints = np.array(x_points)
     ypoints = np.array(y_points)
 
-    plt.plot(xpoints, ypoints)
-    return x_pos_train, max(abs(min(y_points)), max(y_points))
-    # plt.show()
-    # return x_points, y_points
+    if graph:
+        plt.plot(xpoints, ypoints)
+    
+    y_min = min(y_points)
+    x_min = x_points[y_points.index(y_min)]
+    y_max = max(y_points)
+    x_max = x_points[y_points.index(y_max)]
+
+    if abs(y_min) > abs(y_max):
+        y_abs = abs(y_min)
+        x_abs = x_min
+    else:
+        y_abs = abs(y_max)
+        x_abs = x_max
+    
+    return x_pos_train, y_abs, y_min, y_max, x_abs, x_min, x_max
 
 
-def greatest_shear(x_pos_train, p_wheel_train):
+def greatest_shear(x_pos_train, p_wheel_train, graph):
     res = [0, 0]
     for i in range(-908, 1149):
-        if graph_sfd(x_pos_train, i, p_wheel_train)[1] > res[1]:
-            res[0], res[1] = graph_sfd(x_pos_train, i, p_wheel_train)
+        sfd_res = graph_sfd(x_pos_train, i, p_wheel_train, graph)
+        if sfd_res[1] > res[1]:
+            res[0], res[1] = sfd_res[0], sfd_res[1]
 
     return res
 
+def shear_envelope(x_pos_train, p_wheel_train, graph):
+    x_points_abs = []
+    y_points_abs = []
+    x_points_min = []
+    y_points_min = []
+    x_points_max = []
+    y_points_max = []
 
-print(calc_reaction_forces(x_pos_train, -52, p_wheel_train))
-print(greatest_shear(x_pos_train, p_wheel_train))
-print(graph_sfd(x_pos_train, -51.999999999999, p_wheel_train))
+    for j in range(0, 1201):
+        temp_min = 0
+        temp_max = 0
+        temp_abs = 0
+        for i in range(-908, 1149):
+            Ay, By, x_pos = calc_reaction_forces(x_pos_train, i, p_wheel_train)
+
+            y_val = 0
+
+            for wheel in range(len(x_pos)):
+                if x_pos[wheel] <= j and x_pos[wheel] >= 0:
+                    y_val -= p_wheel_train[wheel]
+
+            y_val += Ay
+
+            if i == 1200:
+                y_val += By
+            
+            temp_max = max(temp_max, y_val)
+            temp_min = min(temp_min, y_val)
+            temp_abs = max(abs(temp_max), abs(temp_min), temp_abs)
+        # print(temp_max, temp_min, temp_abs)
+        y_points_abs.append(temp_abs)
+        y_points_min.append(temp_min)
+        y_points_max.append(temp_max)
+        x_points_abs.append(j)
+        x_points_min.append(j)
+        x_points_max.append(j)
+
+    xpoints_abs = np.array(x_points_abs)
+    ypoints_abs = np.array(y_points_abs)
+    xpoints_min = np.array(x_points_min)
+    ypoints_min = np.array(y_points_min)
+    xpoints_max = np.array(x_points_max)
+    ypoints_max = np.array(y_points_max)
+
+    plt.plot(xpoints_abs, ypoints_abs, label="Absolute Shear")
+    plt.plot(xpoints_max, ypoints_max, linestyle='-.', label="Max Shear")
+    plt.plot(xpoints_min, ypoints_min, linestyle='-.', label="Min Shear")
+    plt.xlabel("Distance Along Beam (mm)")
+    plt.ylabel("Shear Force (N)")
+    plt.title("Shear Force Envelope")
+    plt.legend(loc="upper right")
+    plt.axis([0, 1200, -300, 300])
+
+# print(calc_reaction_forces(x_pos_train, -52, p_wheel_train))
+# print(greatest_shear(x_pos_train, p_wheel_train, True))
+# print(graph_sfd(x_pos_train, -51.999999999999, p_wheel_train))
+shear_envelope(x_pos_train, p_wheel_train, False)
 plt.show()
 
 # -------Create SFD/BMD Envelope-------
