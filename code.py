@@ -90,7 +90,7 @@ def graph_sfd(x_pos, adjustment, p_wheel_train, graph):
 
     if graph:
         plt.plot(xpoints, ypoints)
-    
+
     y_min = min(y_points)
     x_min = x_points[y_points.index(y_min)]
     y_max = max(y_points)
@@ -102,7 +102,7 @@ def graph_sfd(x_pos, adjustment, p_wheel_train, graph):
     else:
         y_abs = abs(y_max)
         x_abs = x_max
-    
+
     return x_pos_train, y_abs, y_min, y_max, x_abs, x_min, x_max
 
 
@@ -115,6 +115,8 @@ def greatest_shear(x_pos_train, p_wheel_train, graph):
 
     return res
 
+
+# -------Create SFD/BMD Envelope-------
 def shear_envelope(x_pos_train, p_wheel_train, graph):
     x_points_abs = []
     y_points_abs = []
@@ -140,7 +142,7 @@ def shear_envelope(x_pos_train, p_wheel_train, graph):
 
             if i == 1200:
                 y_val += By
-            
+
             temp_max = max(temp_max, y_val)
             temp_min = min(temp_min, y_val)
             temp_abs = max(abs(temp_max), abs(temp_min), temp_abs)
@@ -160,21 +162,20 @@ def shear_envelope(x_pos_train, p_wheel_train, graph):
     ypoints_max = np.array(y_points_max)
 
     plt.plot(xpoints_abs, ypoints_abs, label="Absolute Shear")
-    plt.plot(xpoints_max, ypoints_max, linestyle='-.', label="Max Shear")
-    plt.plot(xpoints_min, ypoints_min, linestyle='-.', label="Min Shear")
+    plt.plot(xpoints_max, ypoints_max, linestyle="-.", label="Max Shear")
+    plt.plot(xpoints_min, ypoints_min, linestyle="-.", label="Min Shear")
     plt.xlabel("Distance Along Beam (mm)")
     plt.ylabel("Shear Force (N)")
     plt.title("Shear Force Envelope")
     plt.legend(loc="upper right")
     plt.axis([0, 1200, -300, 300])
 
+
 # print(calc_reaction_forces(x_pos_train, -52, p_wheel_train))
 # print(greatest_shear(x_pos_train, p_wheel_train, True))
 # print(graph_sfd(x_pos_train, -51.999999999999, p_wheel_train))
 shear_envelope(x_pos_train, p_wheel_train, False)
 plt.show()
-
-# -------Create SFD/BMD Envelope-------
 
 # -------Cross-sectional Properties----
 A_top = top_flange * top_flange_thickness
