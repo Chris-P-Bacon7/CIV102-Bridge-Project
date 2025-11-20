@@ -92,18 +92,39 @@ def graph_sfd(x_pos, adjustment, p_wheel_train, graph):
         plt.plot(xpoints, ypoints)
 
     y_min = min(y_points)
-    x_min = x_points[y_points.index(y_min)]
     y_max = max(y_points)
-    x_max = x_points[y_points.index(y_max)]
 
     if abs(y_min) > abs(y_max):
         y_abs = abs(y_min)
-        x_abs = x_min
     else:
         y_abs = abs(y_max)
-        x_abs = x_max
 
-    return x_pos_train, y_abs, y_min, y_max, x_abs, x_min, x_max
+    return x_pos_train, y_abs, xpoints[1:], ypoints[1:]
+
+def graph_bmd(x_pos, adjustment, p_wheel_train, graph):
+    sfd_vals = graph_sfd(x_pos, adjustment, p_wheel_train, False)
+    x_pos, xpoints, ypoints = sfd_vals[0], sfd_vals[2], sfd_vals[3]
+
+    dx = np.diff(xpoints)
+    avg_height = (ypoints[:-1] + ypoints[1:]) / 2
+    trapezoid_areas = avg_height * dx
+
+    bmd_ypoints = np.insert(np.cumsum(trapezoid_areas), 0, 0)
+    bmd_xpoints = xpoints
+
+    if graph:
+        plt.gca().invert_yaxis()
+        plt.plot(bmd_xpoints, bmd_ypoints)
+    
+    y_min = min(bmd_ypoints)
+    y_max = max(bmd_ypoints)
+
+    if abs(y_min) > abs(y_max):
+        y_abs = abs(y_min)
+    else:
+        y_abs = abs(y_max)
+
+    return x_pos, y_abs, bmd_xpoints, bmd_ypoints.tolist()
 
 
 def greatest_shear(x_pos_train, p_wheel_train, graph):
@@ -115,9 +136,17 @@ def greatest_shear(x_pos_train, p_wheel_train, graph):
 
     return res
 
+def greatest_moment(x_pos_train, p_wheel_train, graph):
+    res = [0, 0]
+    for i in range(-908, 1149):
+        sfd_res = graph_bmd(x_pos_train, i, p_wheel_train, graph)
+        if sfd_res[1] > res[1]:
+            res[0], res[1] = sfd_res[0], sfd_res[1]
+
+    return res
 
 # -------Create SFD/BMD Envelope-------
-def shear_envelope(x_pos_train, p_wheel_train, graph):
+def shear_envelope(x_pos_train, p_wheel_train):
     x_points_abs = []
     y_points_abs = []
     x_points_min = []
@@ -170,11 +199,39 @@ def shear_envelope(x_pos_train, p_wheel_train, graph):
     plt.legend(loc="upper right")
     plt.axis([0, 1200, -300, 300])
 
+def moment_envelope(x_pos_train, p_wheel_train):
+    x_points_max = []
+    for j in range(0, 1201):
+        x_points_max.append(j)
+    y_points_max = [0]*1201
+
+    for i in range(-908, 1149):
+        bmd_res = graph_bmd(x_pos_train, i, p_wheel_train, False)
+        y_temp = bmd_res[3]
+
+        for x in range(len(y_temp)):
+            if y_temp[x] > y_points_max[x]:
+                y_points_max[x] = y_temp[x]
+
+    xpoints_max = np.array(x_points_max)
+    ypoints_max = np.array(y_points_max)
+
+    plt.plot(xpoints_max, ypoints_max, linestyle="--", label="Max Moment")
+    plt.xlabel("Distance Along Beam (mm)")
+    plt.ylabel("Moment (Nmm)")
+    plt.title("Bending Moment Envelope")
+    plt.legend(loc="upper right")
+    plt.axis([0, 1200, 75000, -75000])
+
+
+# print(graph_bmd(x_pos_train, 120, p_wheel_train, True))
+# print(greatest_moment(x_pos_train, p_wheel_train, True))
+print(moment_envelope(x_pos_train, p_wheel_train))
 
 # print(calc_reaction_forces(x_pos_train, -52, p_wheel_train))
 # print(greatest_shear(x_pos_train, p_wheel_train, True))
-# print(graph_sfd(x_pos_train, -51.999999999999, p_wheel_train))
-shear_envelope(x_pos_train, p_wheel_train, False)
+# print(graph_sfd(x_pos_train, -51.999999999999, p_wheel_train, True))
+# shear_envelope(x_pos_train, p_wheel_train, False)
 plt.show()
 
 # -------Cross-sectional Properties----
