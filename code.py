@@ -1,3 +1,5 @@
+import math
+
 # -------Defining Cross Section--------
 
 #                            top_flange
@@ -28,7 +30,9 @@ bridge_length = 1200
 train_weight = 400
 x_pos_train = [52, 228, 392, 568, 732, 908]
 p_wheel_train = [train_weight / 6] * 6
-
+E = 4000
+mu = 0.2
+a = 400
 # -------Solve for SFD/BMD-------------
 import matplotlib.pyplot as plt
 import numpy as np
@@ -139,14 +143,14 @@ def greatest_shear(x_pos_train, p_wheel_train, graph):
 def greatest_moment(x_pos_train, p_wheel_train, graph):
     res = [0, 0]
     for i in range(-908, 1149):
-        sfd_res = graph_bmd(x_pos_train, i, p_wheel_train, graph)
-        if sfd_res[1] > res[1]:
-            res[0], res[1] = sfd_res[0], sfd_res[1]
+        bmd_res = graph_bmd(x_pos_train, i, p_wheel_train, graph)
+        if bmd_res[1] > res[1]:
+            res[0], res[1] = bmd_res[0], bmd_res[1]
 
     return res
 
 # -------Create SFD/BMD Envelope-------
-def shear_envelope(x_pos_train, p_wheel_train):
+def shear_envelope(x_pos_train, p_wheel_train, graph):
     x_points_abs = []
     y_points_abs = []
     x_points_min = []
@@ -182,7 +186,7 @@ def shear_envelope(x_pos_train, p_wheel_train):
         x_points_abs.append(j)
         x_points_min.append(j)
         x_points_max.append(j)
-
+    
     xpoints_abs = np.array(x_points_abs)
     ypoints_abs = np.array(y_points_abs)
     xpoints_min = np.array(x_points_min)
@@ -190,14 +194,18 @@ def shear_envelope(x_pos_train, p_wheel_train):
     xpoints_max = np.array(x_points_max)
     ypoints_max = np.array(y_points_max)
 
-    plt.plot(xpoints_abs, ypoints_abs, label="Absolute Shear")
-    plt.plot(xpoints_max, ypoints_max, linestyle="-.", label="Max Shear")
-    plt.plot(xpoints_min, ypoints_min, linestyle="-.", label="Min Shear")
+    plt.figure()
+    if graph:
+        plt.plot(xpoints_abs, ypoints_abs, label="Absolute Shear")
+        plt.plot(xpoints_max, ypoints_max, linestyle="-.", label="Max Shear")
+        plt.plot(xpoints_min, ypoints_min, linestyle="-.", label="Min Shear")
+    else:
+        plt.plot(xpoints_abs, ypoints_abs, linestyle="-.", label="Absolute Shear", linewidth=2)  
     plt.xlabel("Distance Along Beam (mm)")
     plt.ylabel("Shear Force (N)")
     plt.title("Shear Force Envelope")
     plt.legend(loc="upper right")
-    plt.axis([0, 1200, -300, 300])
+    return xpoints_abs, ypoints_abs
 
 def moment_envelope(x_pos_train, p_wheel_train):
     x_points_max = []
@@ -216,23 +224,23 @@ def moment_envelope(x_pos_train, p_wheel_train):
     xpoints_max = np.array(x_points_max)
     ypoints_max = np.array(y_points_max)
 
-    plt.plot(xpoints_max, ypoints_max, linestyle="--", label="Max Moment")
+    plt.figure()
+    plt.plot(xpoints_max, ypoints_max, linestyle="-.", label="Max Moment", linewidth=2)
     plt.xlabel("Distance Along Beam (mm)")
     plt.ylabel("Moment (Nmm)")
     plt.title("Bending Moment Envelope")
-    plt.legend(loc="upper right")
-    plt.axis([0, 1200, 75000, -75000])
+    plt.gca().invert_yaxis()
+    return xpoints_max, ypoints_max
 
 
-# print(graph_bmd(x_pos_train, 120, p_wheel_train, True))
+# print(graph_bmd(x_pos_train, -51, p_wheel_train, True)[0:2])
 # print(greatest_moment(x_pos_train, p_wheel_train, True))
-print(moment_envelope(x_pos_train, p_wheel_train))
+# moment_envelope(x_pos_train, p_wheel_train)
 
 # print(calc_reaction_forces(x_pos_train, -52, p_wheel_train))
 # print(greatest_shear(x_pos_train, p_wheel_train, True))
 # print(graph_sfd(x_pos_train, -51.999999999999, p_wheel_train, True))
-# shear_envelope(x_pos_train, p_wheel_train, False)
-plt.show()
+# shear_envelope(x_pos_train, p_wheel_train)
 
 # -------Cross-sectional Properties----
 A_top = top_flange * top_flange_thickness
@@ -262,17 +270,83 @@ I = (
     + (A_bot * (y_bot - y_bar) ** 2)
 )
 
+y_tot = bot_flange_thickness+web+top_flange_thickness
+y_from_top = y_tot - y_bar
+
+b_mat = web_thickness * 2
+b_glue = glue * 2
+
+Q_mat = (A_bot*(y_bar-(bot_flange_thickness/2))) + 2*(web_thickness*(y_bar-bot_flange_thickness)*(y_bar-bot_flange_thickness)/2)
+Q_glue = (A_top*(y_top-y_bar))
+
+print(Q_mat)
+
 # -------Calculate Applied Stresses----
-# max_tensile_stress = max_moment * y_bar / I
-# max_compressive_stress = max_moment * (height-y_bar) / I
+max_tensile_stress = greatest_moment(x_pos_train, p_wheel_train, False)[1] * y_bar / I
+max_compressive_stress = greatest_moment(x_pos_train, p_wheel_train, False)[1] * y_from_top / I
+max_shear_stress_mat = (greatest_shear(x_pos_train, p_wheel_train, False)[1] * Q_mat) / (I*b_mat)
+max_shear_stress_glue = (greatest_shear(x_pos_train, p_wheel_train, False)[1] * Q_glue) / (I*b_glue)
+
+# print("max_tensile_stress", max_tensile_stress)
+# print("max_compressive_stress", max_compressive_stress)
+# print("max_shear_stress_mat", max_shear_stress_mat)
+# print("max_shear_stress_glue", max_shear_stress_glue)
 
 # -------Material/Thin Plate Buckling--
+buckling_case1 = (((4*math.pi**2)*E)/(12*(1-mu**2))) * (top_flange_thickness/(bot_flange-bot_flange_thickness))**2
+buckling_case2 = (((0.425*math.pi**2)*E)/(12*(1-mu**2))) * (top_flange_thickness/((top_flange-bot_flange)/2))**2
+buckling_case3 = (((6*math.pi**2)*E)/(12*(1-mu**2))) * ((web_thickness)/((web+bot_flange_thickness-y_bar)))**2
+buckling_case4 = (((5*math.pi**2)*E)/(12*(1-mu**2))) * (((web_thickness)/((web+bot_flange_thickness)))**2 + ((web_thickness)/((a)))**2)
 
+# print("buckling_case1", buckling_case1)
+# print("buckling_case2", buckling_case2)
+# print("buckling_case3", buckling_case3)
+# print("buckling_case4", buckling_case4)
 # -------FOS---------------------------
-# FOS_tension = 30/max_tensile_stress
-# FOS_compression = 6/max_compressive_stress
-# -------Vfail and Mfail---------------
+FOS_tension = 30/max_tensile_stress
+FOS_compression = 6/max_compressive_stress
+FOS_shear_mat = 4/max_shear_stress_mat
+FOS_shear_glue = 2/max_shear_stress_glue
+FOS_buck_1 = buckling_case1/max_compressive_stress
+FOS_buck_2 = buckling_case2/max_compressive_stress
+FOS_buck_3 = buckling_case3/max_compressive_stress
+FOS_buck_4 = buckling_case4/max_shear_stress_mat
 
+print("FOS_tension", FOS_tension)
+print("FOS_compression", FOS_compression)
+print("FOS_shear_mat", FOS_shear_mat)
+print("FOS_shear_glue", FOS_shear_glue)
+print("FOS_buck_1", FOS_buck_1)
+print("FOS_buck_2", FOS_buck_2)
+print("FOS_buck_3", FOS_buck_3)
+print("FOS_buck_4", FOS_buck_4)
+# -------Vfail and Mfail---------------
+moment_env = moment_envelope(x_pos_train, p_wheel_train)
+M_fail_tens_y = moment_env[1] * FOS_tension
+M_fail_comp_y = moment_env[1] * FOS_compression
+M_fail_buck1_y = moment_env[1] * FOS_buck_1
+M_fail_buck2_y = moment_env[1] * FOS_buck_2
+M_fail_buck3_y = moment_env[1] * FOS_buck_3
+plt.plot(moment_env[0], M_fail_tens_y, label="Tension Failure")
+plt.plot(moment_env[0], M_fail_comp_y, label="Compression Failure")
+plt.plot(moment_env[0], M_fail_buck1_y, label="Buckling 1 Failure")
+plt.plot(moment_env[0], M_fail_buck2_y, label="Buckling 2 Failure")
+plt.plot(moment_env[0], M_fail_buck3_y, label="Buckling 3 Failure")
+
+plt.legend(loc="upper right")
+
+shear_env = shear_envelope(x_pos_train, p_wheel_train, False)
+S_fail_mat_y = shear_env[1] * FOS_shear_mat
+S_fail_glue_y = shear_env[1] * FOS_shear_glue
+S_fail_buck4_y = shear_env[1] * FOS_buck_4
+
+plt.plot(shear_env[0], S_fail_mat_y, label="Mat Shear Failure")
+plt.plot(shear_env[0], S_fail_glue_y, label="Glue Shear Failure")
+plt.plot(shear_env[0], S_fail_buck4_y, label="Buckling 4 Shear Failure")
+
+plt.legend(loc="upper right")
+
+plt.show()
 # -------Output Plots------------------
 print("x_pos_train:", x_pos_train, "\np_wheel_train:", p_wheel_train)
 print("------------------")
