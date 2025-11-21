@@ -105,6 +105,7 @@ def graph_sfd(x_pos, adjustment, p_wheel_train, graph):
 
     return x_pos_train, y_abs, xpoints[1:], ypoints[1:]
 
+
 def graph_bmd(x_pos, adjustment, p_wheel_train, graph):
     sfd_vals = graph_sfd(x_pos, adjustment, p_wheel_train, False)
     x_pos, xpoints, ypoints = sfd_vals[0], sfd_vals[2], sfd_vals[3]
@@ -119,7 +120,7 @@ def graph_bmd(x_pos, adjustment, p_wheel_train, graph):
     if graph:
         plt.gca().invert_yaxis()
         plt.plot(bmd_xpoints, bmd_ypoints)
-    
+
     y_min = min(bmd_ypoints)
     y_max = max(bmd_ypoints)
 
@@ -140,6 +141,7 @@ def greatest_shear(x_pos_train, p_wheel_train, graph):
 
     return res
 
+
 def greatest_moment(x_pos_train, p_wheel_train, graph):
     res = [0, 0]
     for i in range(-908, 1149):
@@ -148,6 +150,7 @@ def greatest_moment(x_pos_train, p_wheel_train, graph):
             res[0], res[1] = bmd_res[0], bmd_res[1]
 
     return res
+
 
 # -------Create SFD/BMD Envelope-------
 def shear_envelope(x_pos_train, p_wheel_train, graph):
@@ -186,7 +189,7 @@ def shear_envelope(x_pos_train, p_wheel_train, graph):
         x_points_abs.append(j)
         x_points_min.append(j)
         x_points_max.append(j)
-    
+
     xpoints_abs = np.array(x_points_abs)
     ypoints_abs = np.array(y_points_abs)
     xpoints_min = np.array(x_points_min)
@@ -200,18 +203,25 @@ def shear_envelope(x_pos_train, p_wheel_train, graph):
         plt.plot(xpoints_max, ypoints_max, linestyle="-.", label="Max Shear")
         plt.plot(xpoints_min, ypoints_min, linestyle="-.", label="Min Shear")
     else:
-        plt.plot(xpoints_abs, ypoints_abs, linestyle="-.", label="Absolute Shear", linewidth=2)  
+        plt.plot(
+            xpoints_abs,
+            ypoints_abs,
+            linestyle="-.",
+            label="Absolute Shear",
+            linewidth=2,
+        )
     plt.xlabel("Distance Along Beam (mm)")
     plt.ylabel("Shear Force (N)")
     plt.title("Shear Force Envelope")
     plt.legend(loc="upper right")
     return xpoints_abs, ypoints_abs
 
+
 def moment_envelope(x_pos_train, p_wheel_train):
     x_points_max = []
     for j in range(0, 1201):
         x_points_max.append(j)
-    y_points_max = [0]*1201
+    y_points_max = [0] * 1201
 
     for i in range(-908, 1149):
         bmd_res = graph_bmd(x_pos_train, i, p_wheel_train, False)
@@ -270,22 +280,30 @@ I = (
     + (A_bot * (y_bot - y_bar) ** 2)
 )
 
-y_tot = bot_flange_thickness+web+top_flange_thickness
+y_tot = bot_flange_thickness + web + top_flange_thickness
 y_from_top = y_tot - y_bar
 
 b_mat = web_thickness * 2
 b_glue = glue * 2
 
-Q_mat = (A_bot*(y_bar-(bot_flange_thickness/2))) + 2*(web_thickness*(y_bar-bot_flange_thickness)*(y_bar-bot_flange_thickness)/2)
-Q_glue = (A_top*(y_top-y_bar))
+Q_mat = (A_bot * (y_bar - (bot_flange_thickness / 2))) + 2 * (
+    web_thickness * (y_bar - bot_flange_thickness) * (y_bar - bot_flange_thickness) / 2
+)
+Q_glue = A_top * (y_top - y_bar)
 
 print(Q_mat)
 
 # -------Calculate Applied Stresses----
 max_tensile_stress = greatest_moment(x_pos_train, p_wheel_train, False)[1] * y_bar / I
-max_compressive_stress = greatest_moment(x_pos_train, p_wheel_train, False)[1] * y_from_top / I
-max_shear_stress_mat = (greatest_shear(x_pos_train, p_wheel_train, False)[1] * Q_mat) / (I*b_mat)
-max_shear_stress_glue = (greatest_shear(x_pos_train, p_wheel_train, False)[1] * Q_glue) / (I*b_glue)
+max_compressive_stress = (
+    greatest_moment(x_pos_train, p_wheel_train, False)[1] * y_from_top / I
+)
+max_shear_stress_mat = (
+    greatest_shear(x_pos_train, p_wheel_train, False)[1] * Q_mat
+) / (I * b_mat)
+max_shear_stress_glue = (
+    greatest_shear(x_pos_train, p_wheel_train, False)[1] * Q_glue
+) / (I * b_glue)
 
 # print("max_tensile_stress", max_tensile_stress)
 # print("max_compressive_stress", max_compressive_stress)
@@ -293,24 +311,33 @@ max_shear_stress_glue = (greatest_shear(x_pos_train, p_wheel_train, False)[1] * 
 # print("max_shear_stress_glue", max_shear_stress_glue)
 
 # -------Material/Thin Plate Buckling--
-buckling_case1 = (((4*math.pi**2)*E)/(12*(1-mu**2))) * (top_flange_thickness/(bot_flange-bot_flange_thickness))**2
-buckling_case2 = (((0.425*math.pi**2)*E)/(12*(1-mu**2))) * (top_flange_thickness/((top_flange-bot_flange)/2))**2
-buckling_case3 = (((6*math.pi**2)*E)/(12*(1-mu**2))) * ((web_thickness)/((web+bot_flange_thickness-y_bar)))**2
-buckling_case4 = (((5*math.pi**2)*E)/(12*(1-mu**2))) * (((web_thickness)/((web+bot_flange_thickness)))**2 + ((web_thickness)/((a)))**2)
+buckling_case1 = (((4 * math.pi**2) * E) / (12 * (1 - mu**2))) * (
+    top_flange_thickness / (bot_flange - bot_flange_thickness)
+) ** 2
+buckling_case2 = (((0.425 * math.pi**2) * E) / (12 * (1 - mu**2))) * (
+    top_flange_thickness / ((top_flange - bot_flange) / 2)
+) ** 2
+buckling_case3 = (((6 * math.pi**2) * E) / (12 * (1 - mu**2))) * (
+    (web_thickness) / ((web + bot_flange_thickness - y_bar))
+) ** 2
+buckling_case4 = (((5 * math.pi**2) * E) / (12 * (1 - mu**2))) * (
+    ((web_thickness) / ((web + bot_flange_thickness))) ** 2
+    + ((web_thickness) / ((a))) ** 2
+)
 
 # print("buckling_case1", buckling_case1)
 # print("buckling_case2", buckling_case2)
 # print("buckling_case3", buckling_case3)
 # print("buckling_case4", buckling_case4)
 # -------FOS---------------------------
-FOS_tension = 30/max_tensile_stress
-FOS_compression = 6/max_compressive_stress
-FOS_shear_mat = 4/max_shear_stress_mat
-FOS_shear_glue = 2/max_shear_stress_glue
-FOS_buck_1 = buckling_case1/max_compressive_stress
-FOS_buck_2 = buckling_case2/max_compressive_stress
-FOS_buck_3 = buckling_case3/max_compressive_stress
-FOS_buck_4 = buckling_case4/max_shear_stress_mat
+FOS_tension = 30 / max_tensile_stress
+FOS_compression = 6 / max_compressive_stress
+FOS_shear_mat = 4 / max_shear_stress_mat
+FOS_shear_glue = 2 / max_shear_stress_glue
+FOS_buck_1 = buckling_case1 / max_compressive_stress
+FOS_buck_2 = buckling_case2 / max_compressive_stress
+FOS_buck_3 = buckling_case3 / max_compressive_stress
+FOS_buck_4 = buckling_case4 / max_shear_stress_mat
 
 print("FOS_tension", FOS_tension)
 print("FOS_compression", FOS_compression)
