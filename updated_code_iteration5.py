@@ -19,9 +19,9 @@ import math
 #                     **                    **
 #                     **                    **
 #                       
-top_flange = 120
+top_flange = 104
 top_flange_thickness = 2.54
-web = 100
+web = 120
 web_thickness = 1.27
 glue = 80-2.54
 glue_thickness = 1.27
