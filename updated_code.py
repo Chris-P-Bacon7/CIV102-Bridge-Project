@@ -1,3 +1,6 @@
+# In this program, the bottom flange is not included in the calculations as it introduces
+# an illegal cross-section for the project requirements.
+
 import math
 
 # -------Defining Cross Section--------
@@ -14,16 +17,17 @@ import math
 #                     **                    **
 #                     **                    **
 #                     **                    **
-#                     ************************
-#                             bot_flange
+#                     **                    **
+#                       
 top_flange = 100
 top_flange_thickness = 1.27
 web = 75 - 1.27
 web_thickness = 1.27
 glue = 5
 glue_thickness = 1.27
-bot_flange = 80
-bot_flange_thickness = 1.27
+
+# Renamed bottom flange into this to reflect what is being measured
+web_separation = 80
 
 # -------General Properties------------
 bridge_length = 1200
@@ -254,40 +258,36 @@ def moment_envelope(x_pos_train, p_wheel_train):
 
 # -------Cross-sectional Properties----
 A_top = top_flange * top_flange_thickness
-y_top = bot_flange_thickness + web + 0.5 * top_flange_thickness
+y_top = web + 0.5 * top_flange_thickness
 
 A_web = web * web_thickness
-y_web = bot_flange_thickness + 0.5 * web
+y_web = 0.5 * web
 
 A_glue = glue * glue_thickness
-y_glue = bot_flange_thickness + web - 0.5 * glue_thickness
+y_glue = web - 0.5 * glue_thickness
 
-A_bot = bot_flange * bot_flange_thickness
-y_bot = 0.5 * bot_flange_thickness
 
-y_bar = (A_top * y_top + 2 * A_web * y_web + 2 * A_glue * y_glue + A_bot * y_bot) / (
-    A_top + 2 * A_web + 2 * A_glue + A_bot
+y_bar = (A_top * y_top + 2 * A_web * y_web + 2 * A_glue * y_glue) / (
+    A_top + 2 * A_web + 2 * A_glue
 )
 
 I = (
     (top_flange * top_flange_thickness**3) / 12
     + 2 * (web**3 * web_thickness) / 12
-    + (bot_flange * bot_flange_thickness**3) / 12
     + 2 * (glue * glue_thickness**3) / 12
     + (A_top * (y_top - y_bar) ** 2)
     + 2 * (A_web * (y_web - y_bar) ** 2)
     + 2 * (A_glue * (y_glue - y_bar) ** 2)
-    + (A_bot * (y_bot - y_bar) ** 2)
 )
 
-y_tot = bot_flange_thickness + web + top_flange_thickness
+y_tot = web + top_flange_thickness
 y_from_top = y_tot - y_bar
 
 b_mat = web_thickness * 2
 b_glue = glue * 2
 
-Q_mat = (A_bot * (y_bar - (bot_flange_thickness / 2))) + 2 * (
-    web_thickness * (y_bar - bot_flange_thickness) * (y_bar - bot_flange_thickness) / 2
+Q_mat = 2 * (web_thickness * (y_bar) 
+             * (y_bar) / 2
 )
 Q_glue = A_top * (y_top - y_bar)
 
@@ -312,17 +312,17 @@ max_shear_stress_glue = (
 
 # -------Material/Thin Plate Buckling--
 buckling_case1 = (((4 * math.pi**2) * E) / (12 * (1 - mu**2))) * (
-    top_flange_thickness / (bot_flange - bot_flange_thickness)
+    top_flange_thickness / (web_separation)
 ) ** 2
 buckling_case2 = (((0.425 * math.pi**2) * E) / (12 * (1 - mu**2))) * (
-    top_flange_thickness / ((top_flange - bot_flange) / 2)
+    top_flange_thickness / ((top_flange - (web_separation + 2 * web_thickness)) / 2)
 ) ** 2
 buckling_case3 = (((6 * math.pi**2) * E) / (12 * (1 - mu**2))) * (
-    (web_thickness) / ((web + bot_flange_thickness - y_bar))
+    (web_thickness) / ((web - y_bar))
 ) ** 2
 buckling_case4 = (((5 * math.pi**2) * E) / (12 * (1 - mu**2))) * (
-    ((web_thickness) / ((web + bot_flange_thickness))) ** 2
-    + ((web_thickness) / ((a))) ** 2
+    ((web_thickness) / (web)) ** 2
+    + ((web_thickness) / (a)) ** 2
 )
 
 # print("buckling_case1", buckling_case1)
