@@ -19,7 +19,7 @@ import math
 #                     **                    **
 #                     **                    **
 #                       
-top_flange = 104
+top_flange = 100
 top_flange_thickness = 2.54
 web = 120
 web_thickness = 1.27
@@ -31,9 +31,9 @@ web_separation = 80
 
 # -------General Properties------------
 bridge_length = 1200
-train_weight = 400
+train_weight = 452
 x_pos_train = [52, 228, 392, 568, 732, 908]
-p_wheel_train = [train_weight / 6] * 6
+p_wheel_train = [67.5, 67.5, 67.5, 67.5, 91.0, 91.0]
 E = 4000
 mu = 0.2
 a = 100
