@@ -1,9 +1,42 @@
-# In this program, the bottom flange is not included in the calculations as it introduces
-# an illegal cross-section for the project requirements.
-
 import math
+import matplotlib.pyplot as plt
+import numpy as np
 
-# -------Defining Cross Section--------
+# -------Dimensions Constants--------
+
+# The following parameters do not change throughout the bridge
+top_flange = 104
+top_flange_thickness = 2.54
+web = 120
+web_thickness = 1.27
+web_separation = 80
+
+# -------Variable Dimensions-------
+
+# The following parameters change depending on the section of the bridge
+
+# Ends (0-400, 800-1200): Extra strip removed, only small glue tabs remain
+
+#                            top_flange
+#              ***************************************
+#              ***************************************
+#         glue (20)   *******         ********
+#                     **                    **
+#                     **                    **
+#                     **                    **
+#              web    **                    **
+#                     **                    **
+#                     **                    **
+#                     **                    **
+#                     **                    **
+#                     **                    **
+
+glue_width_ends = 15 - 1.27
+glue_thickness = 1.27
+
+
+# Middle (400-800): The original cross-section is retained for maximum
+# resistance against bending moments
 
 #                            top_flange
 #              ***************************************
@@ -18,16 +51,9 @@ import math
 #                     **                    **
 #                     **                    **
 #                     **                    **
-#                       
-top_flange = 104
-top_flange_thickness = 2.54
-web = 120
-web_thickness = 1.27
-glue = 20
-glue_thickness = 1.27
+#
 
-# Renamed bottom flange into this to reflect what is being measured
-web_separation = 80
+glue_width_mid = 80 - 2.54
 
 # -------General Properties------------
 bridge_length = 1200
@@ -38,9 +64,6 @@ E = 4000
 mu = 0.2
 a = 100
 # -------Solve for SFD/BMD-------------
-import matplotlib.pyplot as plt
-import numpy as np
-
 
 def calc_reaction_forces(x_pos, adjustment, p_wheel_train):
     Ay = 0
@@ -248,53 +271,75 @@ def moment_envelope(x_pos_train, p_wheel_train):
 
 
 # print(graph_bmd(x_pos_train, -51, p_wheel_train, True)[0:2])
-# print(greatest_moment(x_pos_train, p_wheel_train, True))
+print(greatest_moment(x_pos_train, p_wheel_train, True))
 # moment_envelope(x_pos_train, p_wheel_train)
 
 # print(calc_reaction_forces(x_pos_train, -52, p_wheel_train))
 # print(greatest_shear(x_pos_train, p_wheel_train, True))
-# print(graph_sfd(x_pos_train, -51.999999999999, p_wheel_train, True))
+print(graph_sfd(x_pos_train, -51.999999999999, p_wheel_train, True))
 # shear_envelope(x_pos_train, p_wheel_train)
 
 # -------Cross-sectional Properties----
-A_top = top_flange * top_flange_thickness
-y_top = web + glue_thickness + 0.5 * top_flange_thickness
+# Calculates I, y_bar, and Q for a given glue width
 
-A_web = web * web_thickness
-y_web = 0.5 * web
+def get_section_properties(glue_width):
+    glue_thickness = 1.27
 
-A_glue = 2*glue * glue_thickness
-y_glue = web + 0.5 * glue_thickness
+    A_top = top_flange * top_flange_thickness
+    y_top = web + glue_thickness + 0.5 * top_flange_thickness
+
+    A_web = web * web_thickness
+    y_web = 0.5 * web
+
+    A_glue = glue_width * glue_thickness
+    y_glue = web + 0.5 * glue_thickness
+
+    A_total = A_top + A_web + A_glue
 
 
-y_bar = (A_top * y_top + 2 * A_web * y_web + 2* A_glue * y_glue) / (
-    A_top + 2 * A_web + 2* A_glue
-)
+    y_bar = (A_top * y_top + 2 * A_web * y_web + A_glue * y_glue) / (
+        A_total
+    )
 
-I = (
-    (top_flange * top_flange_thickness**3) / 12
-    + 2 * (web**3 * web_thickness) / 12
-    + 2 * (glue * glue_thickness**3) / 12
-    + (A_top * (y_top - y_bar) ** 2)
-    + 2 * (A_web * (y_web - y_bar) ** 2)
-    + 2 * (A_glue * (y_glue - y_bar) ** 2)
-)
+    I = (
+        (top_flange * top_flange_thickness**3) / 12
+        + 2 * (web**3 * web_thickness) / 12
+        + (glue_width * glue_thickness**3) / 12
+        + (A_top * (y_top - y_bar) ** 2)
+        + 2 * (A_web * (y_web - y_bar) ** 2)
+        + (A_glue * (y_glue - y_bar) ** 2)
+    )
 
-y_tot = web + top_flange_thickness
-y_from_top = y_tot - y_bar
+    y_tot = web + top_flange_thickness
+    y_bar_top = y_tot - y_bar
 
-b_mat = web_thickness * 2
-b_glue = glue * 2
+    b_mat = web_thickness * 2
+    b_glue = glue
 
-Q_mat = 2 * (web_thickness * (y_bar) 
-             * (y_bar) / 2
-)
-Q_glue = A_top * (y_top - y_bar)
+    Q_mat = 2 * (web_thickness * (y_bar) 
+                * (y_bar) / 2
+    )
+    Q_glue = A_top * (y_top - y_bar)
 
+    return {
+        "I": I,
+        "y_bar": y_bar,
+        "y_from_top": y_bar_top,
+        "Q_mat": Q_mat,
+        "Q_glue": Q_glue
+    }
+
+# Calculate properties for both sections
+ends = get_section_properties(glue_width_ends)
+mid = get_section_properties(glue_width_mid)
+
+print(f"I (End): {ends["I"]:.0f} mm^4")
+print(f"I (Mid): {mid["I"]:.0f} mm^4")
+      
 # -------Calculate Applied Stresses----
 max_tensile_stress = greatest_moment(x_pos_train, p_wheel_train, False)[1] * y_bar / I
 max_compressive_stress = (
-    greatest_moment(x_pos_train, p_wheel_train, False)[1] * y_from_top / I
+    greatest_moment(x_pos_train, p_wheel_train, False)[1] * y_bar_top / I
 )
 max_shear_stress_mat = (
     greatest_shear(x_pos_train, p_wheel_train, False)[1] * Q_mat
@@ -376,3 +421,4 @@ plt.show()
 print("x_pos_train:", x_pos_train, "\np_wheel_train:", p_wheel_train)
 print("------------------")
 print("y_bar:", y_bar, "\nI:", I)
+''''''

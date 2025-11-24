@@ -1,22 +1,13 @@
+# In this program, the bottom flange is not included in the calculations as it introduces
+# an illegal cross-section for the project requirements.
+
 import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-# -------Dimensions Constants--------
+# -------Defining Cross Section--------
 
-# The following parameters do not change throughout the bridge
-top_flange = 104
-top_flange_thickness = 2.54
-web = 120
-web_thickness = 1.27
-web_separation = 80
-
-# -------Variable Dimensions-------
-
-# The following parameters change depending on the section of the bridge
-
-# Ends (0-400, 800-1200): Extra strip removed, only small glue tabs remain
-
+# 0 -> 1/3 and 2/3 -> 3/3
 #                            top_flange
 #              ***************************************
 #              ***************************************
@@ -31,14 +22,7 @@ web_separation = 80
 #                     **                    **
 #                     **                    **
 
-glue_width_ends = 20 - 1.27
-glue_thickness = 1.27
-
-
-# Middle (400-800): The original cross-section is retained for maximum
-# resistance against bending moments
-
-#                            top_flange
+# 1/3 -> 2/3                  top_flange
 #              ***************************************
 #              ***************************************
 #                     ************************
@@ -51,9 +35,14 @@ glue_thickness = 1.27
 #                     **                    **
 #                     **                    **
 #                     **                    **
-#
-
-glue_width_mid = 80 - 2.54
+#                       
+top_flange = 100
+top_flange_thickness = 2.54 
+web = 120
+web_thickness = 1.27
+glue = 80-2.54
+glue_thickness = 1.27
+web_separation = 80
 
 # -------General Properties------------
 bridge_length = 1200
@@ -280,46 +269,39 @@ print(graph_sfd(x_pos_train, -51.999999999999, p_wheel_train, True))
 # shear_envelope(x_pos_train, p_wheel_train)
 
 # -------Cross-sectional Properties----
-# Calculates I, y_bar, and Q for a given glue width
+A_top = top_flange * top_flange_thickness
+y_top = web + glue_thickness + 0.5 * top_flange_thickness
 
-def get_section_properties(glue_width):
-    glue_thickness = 1.27
+A_web = web * web_thickness
+y_web = 0.5 * web
 
-    A_top = top_flange * top_flange_thickness
-    y_top = web + glue_thickness + 0.5 * top_flange_thickness
-
-    A_web = web * web_thickness
-    y_web = 0.5 * web
-
-    A_glue = glue_width * glue_thickness
-    y_glue = web + 0.5 * glue_thickness
-
-    A_total = A_top + A_web + A_glue
+A_glue = glue * glue_thickness
+y_glue = web + 0.5 * glue_thickness
 
 
-    y_bar = (A_top * y_top + 2 * A_web * y_web + A_glue * y_glue) / (
-        A_total
-    )
-'''
-    I = (
-        (top_flange * top_flange_thickness**3) / 12
-        + 2 * (web**3 * web_thickness) / 12
-        + (glue_width * glue_thickness**3) / 12
-        + (A_top * (y_top - y_bar) ** 2)
-        + 2 * (A_web * (y_web - y_bar) ** 2)
-        + (A_glue * (y_glue - y_bar) ** 2)
-    )
+y_bar = (A_top * y_top + 2 * A_web * y_web + A_glue * y_glue) / (
+    A_top + 2 * A_web + A_glue
+)
 
-    y_tot = web + top_flange_thickness
-    y_from_top = y_tot - y_bar
+I = (
+    (top_flange * top_flange_thickness**3) / 12
+    + 2 * (web**3 * web_thickness) / 12
+    + (glue * glue_thickness**3) / 12
+    + (A_top * (y_top - y_bar) ** 2)
+    + 2 * (A_web * (y_web - y_bar) ** 2)
+    + (A_glue * (y_glue - y_bar) ** 2)
+)
 
-    b_mat = web_thickness * 2
-    b_glue = glue
+y_tot = web + top_flange_thickness
+y_from_top = y_tot - y_bar
 
-    Q_mat = 2 * (web_thickness * (y_bar) 
-                * (y_bar) / 2
-    )
-    Q_glue = A_top * (y_top - y_bar)
+b_mat = web_thickness * 2
+b_glue = glue
+
+Q_mat = 2 * (web_thickness * (y_bar) 
+             * (y_bar) / 2
+)
+Q_glue = A_top * (y_top - y_bar)
 
 # -------Calculate Applied Stresses----
 max_tensile_stress = greatest_moment(x_pos_train, p_wheel_train, False)[1] * y_bar / I
@@ -406,4 +388,3 @@ plt.show()
 print("x_pos_train:", x_pos_train, "\np_wheel_train:", p_wheel_train)
 print("------------------")
 print("y_bar:", y_bar, "\nI:", I)
-'''

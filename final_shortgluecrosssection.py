@@ -5,25 +5,10 @@ import math
 
 # -------Defining Cross Section--------
 
-# 0 -> 1/3 and 2/3 -> 3/3
 #                            top_flange
 #              ***************************************
 #              ***************************************
-#         glue (20)   *******         ********
-#                     **                    **
-#                     **                    **
-#                     **                    **
-#              web    **                    **
-#                     **                    **
-#                     **                    **
-#                     **                    **
-#                     **                    **
-#                     **                    **
-
-# 1/3 -> 2/3                  top_flange
-#              ***************************************
-#              ***************************************
-#                     ************************
+#                     *******          *******
 #                     **                    **
 #                     **                    **
 #                     **                    **
@@ -34,11 +19,11 @@ import math
 #                     **                    **
 #                     **                    **
 #                       
-top_flange = 104
+top_flange = 100
 top_flange_thickness = 2.54
-web = 120
+web = 118.7
 web_thickness = 1.27
-glue = 80-2.54
+glue = 15
 glue_thickness = 1.27
 
 # Renamed bottom flange into this to reflect what is being measured
@@ -46,9 +31,15 @@ web_separation = 80
 
 # -------General Properties------------
 bridge_length = 1200
-train_weight = 400
+train_weight = 452
 x_pos_train = [52, 228, 392, 568, 732, 908]
-p_wheel_train = [train_weight / 6] * 6
+
+# For load case 2
+p_wheel_train = [67.5, 67.5, 67.5, 67.5, 91.0, 91.0]
+
+# For load case 1, then p_wheel_train would be different
+# p_wheel_train = [train_weight / 6] * 6
+
 E = 4000
 mu = 0.2
 a = 100
@@ -263,12 +254,12 @@ def moment_envelope(x_pos_train, p_wheel_train):
 
 
 # print(graph_bmd(x_pos_train, -51, p_wheel_train, True)[0:2])
-print(greatest_moment(x_pos_train, p_wheel_train, True))
+# print(greatest_moment(x_pos_train, p_wheel_train, True))
 # moment_envelope(x_pos_train, p_wheel_train)
 
 # print(calc_reaction_forces(x_pos_train, -52, p_wheel_train))
 # print(greatest_shear(x_pos_train, p_wheel_train, True))
-print(graph_sfd(x_pos_train, -51.999999999999, p_wheel_train, True))
+# print(graph_sfd(x_pos_train, -51.999999999999, p_wheel_train, True))
 # shear_envelope(x_pos_train, p_wheel_train)
 
 # -------Cross-sectional Properties----
@@ -282,24 +273,25 @@ A_glue = glue * glue_thickness
 y_glue = web + 0.5 * glue_thickness
 
 
-y_bar = (A_top * y_top + 2 * A_web * y_web + A_glue * y_glue) / (
-    A_top + 2 * A_web + A_glue
+y_bar = (A_top * y_top + 2 * A_web * y_web + 2* A_glue * y_glue) / (
+    A_top + 2 * A_web + 2* A_glue
 )
+
 
 I = (
     (top_flange * top_flange_thickness**3) / 12
     + 2 * (web**3 * web_thickness) / 12
-    + (glue * glue_thickness**3) / 12
+    + 2 * (glue * glue_thickness**3) / 12
     + (A_top * (y_top - y_bar) ** 2)
     + 2 * (A_web * (y_web - y_bar) ** 2)
-    + (A_glue * (y_glue - y_bar) ** 2)
+    + 2 * (A_glue * (y_glue - y_bar) ** 2)
 )
 
 y_tot = web + top_flange_thickness
 y_from_top = y_tot - y_bar
 
 b_mat = web_thickness * 2
-b_glue = glue
+b_glue = glue * 2
 
 Q_mat = 2 * (web_thickness * (y_bar) 
              * (y_bar) / 2
