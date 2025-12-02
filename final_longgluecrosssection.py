@@ -1,6 +1,3 @@
-# In this program, the bottom flange is not included in the calculations as it introduces
-# an illegal cross-section for the project requirements.
-
 import math
 import matplotlib.pyplot as plt
 import numpy as np
@@ -40,7 +37,12 @@ top_flange = 100
 top_flange_thickness = 2.54 
 web = 120
 web_thickness = 1.27
-glue = 80-2.54
+
+# For the cross section below
+glue = 80 - 2.54
+
+# For the cross section above, then glue = 15 - 2.54
+ 
 glue_thickness = 1.27
 web_separation = 80
 
@@ -48,7 +50,11 @@ web_separation = 80
 bridge_length = 1200
 train_weight = 400
 x_pos_train = [52, 228, 392, 568, 732, 908]
+
+# The following is the weight of the train for Load Case 1
 p_wheel_train = [train_weight / 6] * 6
+# p_wheel_train = [67.5, 67.5, 67.5, 67.5, 91.0, 91.0] for load case 2
+
 E = 4000
 mu = 0.2
 a = 100

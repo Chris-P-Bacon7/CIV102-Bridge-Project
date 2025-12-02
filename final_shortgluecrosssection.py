@@ -1,7 +1,6 @@
-# In this program, the bottom flange is not included in the calculations as it introduces
-# an illegal cross-section for the project requirements.
-
 import math
+import matplotlib.pyplot as plt
+import numpy as np
 
 # -------Defining Cross Section--------
 
@@ -44,9 +43,6 @@ E = 4000
 mu = 0.2
 a = 100
 # -------Solve for SFD/BMD-------------
-import matplotlib.pyplot as plt
-import numpy as np
-
 
 def calc_reaction_forces(x_pos, adjustment, p_wheel_train):
     Ay = 0
